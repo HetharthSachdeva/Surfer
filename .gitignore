@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Screenshots & Local artifacts
+*.png
+screenshot.png
+tasks.txt
+
+# Environments
+.env
+.venv
+venv/
+ENV/
+env/
+
+# Editor/OS configurations
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
