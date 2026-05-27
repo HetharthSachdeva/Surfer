@@ -1,40 +1,70 @@
-# Playwright CLI runner
+# Surfer Playwright Agent
 
-A tiny CLI that uses Playwright (Python) to perform simple tasks against a URL and print a result.
+A modular, stateful web automation agent that runs tasks defined in a simple `tasks.txt` file using Playwright. Perfect as a lightweight foundation for LLM-powered browser operation.
 
-Install:
+## Installation
 
-```bash
-python -m pip install -r requirements.txt
-python -m playwright install
+1. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Install Playwright browsers:**
+   ```bash
+   python -m playwright install
+   ```
+
+---
+
+## File Structure
+
+- **`web_agent.py`**: The core `WebAgent` class. Handles launching/stopping the browser, managing page sessions, and standard automation tasks.
+- **`agent.py`**: The runner script. Reads instructions from `tasks.txt` and calls the agent to perform actions.
+- **`tasks.txt`**: Your simple, line-by-line configuration file.
+
+---
+
+## How to Use
+
+Configure your target URL, task, and parameters in **`tasks.txt`** line-by-line.
+
+### `tasks.txt` Format
+
+- **Line 1**: Target URL (e.g., `https://www.linkedin.com`)
+- **Line 2**: Task to run (see supported tasks below)
+- **Line 3 (Optional)**: Input / Parameter for the task
+- **Line 4 (Optional)**: Headless mode (`True` or `False`. Default is `False` for headed mode)
+- **Line 5 (Optional)**: Timeout in milliseconds (Default is `60000`)
+
+### Example: Taking a screenshot of LinkedIn
+Write the following into your `tasks.txt` file:
+```text
+https://www.linkedin.com
+screenshot
+screenshot.png
 ```
 
-Usage:
-
+### Running the Agent
+Once `tasks.txt` is saved, simply run:
 ```bash
-python agent.py <url> <task> [input] [--headed|--headless] [--timeout <ms>]
+python agent.py
 ```
 
-Examples:
+---
 
-```bash
-python agent.py https://example.com get-title
-python agent.py https://example.com get-text "h1"
-python agent.py https://example.com screenshot screenshot.png
-python agent.py https://example.com fill "#name|||Alice"
-python agent.py https://example.com evaluate "() => document.title"
-```
+## Tasks Supported
 
-Tasks supported:
+- `get-title`: Prints the active page title.
+- `screenshot`: Saves a full-page screenshot (parameter = filename).
+- `get-text`: Prints inner text of a selector (parameter = selector).
+- `click`: Clicks a selector (parameter = selector).
+- `fill`: Fills an input (parameter = `selector|||value`).
+- `evaluate`: Runs a JavaScript expression and prints the result (parameter = JS expression).
 
-- `get-title`: prints the page title
-- `get-text`: prints inner text of a selector (input = selector)
-- `click`: clicks a selector (input = selector)
-- `fill`: fills a selector with value (input = selector|||value)
-- `screenshot`: saves a screenshot (input = filename)
-- `evaluate`: runs a JS expression and prints the result (input = JS)
+---
 
-Notes:
+## Technical Features
 
-- After `pip install`, run `python -m playwright install` to download browser binaries.
-- Use the `--headed` flag to run with a visible browser window.
+- **Stateful `WebAgent` Class**: Implements context manager support (`__enter__` and `__exit__`), ensuring the Playwright browser is closed gracefully.
+- **Headed Mode by Default**: Allows you to watch the browser actions live on your screen as the agent runs.
+- **Safe Ignored Files**: Pre-configured `.gitignore` to keep compiled caches, environments, and screenshot files out of Git.

@@ -6,6 +6,8 @@ Configure your task in tasks.txt (line-by-line):
 Line 1: URL to load
 Line 2: Task to perform
 Line 3: Optional input for the task
+Line 4: Optional headless mode (True or False)
+Line 5: Optional input for the timeout in milliseconds (Default is 60000)
 """
 
 import os
@@ -73,9 +75,20 @@ def main():
 	url = lines[0]
 	task = lines[1]
 	input_str = lines[2] if len(lines) > 2 else None
+	
+	headless = False
+	timeout = 60000
 
-	# Run browser with visible window (headless=False)
-	run_task(url, task, input_str, headless=False)
+	if len(lines) > 3:
+		headless = lines[3].lower() in ("true", "1", "yes")
+	if len(lines) > 4:
+		try:
+			timeout = int(lines[4])
+		except ValueError:
+			pass
+
+	# Run browser with configuration
+	run_task(url, task, input_str, headless=headless, timeout=timeout)
 
 
 if __name__ == "__main__":
