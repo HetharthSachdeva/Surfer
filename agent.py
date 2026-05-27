@@ -25,9 +25,9 @@ import sys
 from playwright.sync_api import sync_playwright
 
 
-def run_task(url: str, task: str, input_str: str | None, headless: bool = True, timeout: int = 60000):
+def run_task(url: str, task: str, input_str: str | None, headless: bool = False, timeout: int = 60000):
 	with sync_playwright() as p:
-		browser = p.chromium.launch(headless=headless)
+		browser = p.chromium.launch(headless=headless, slow_mo=500)
 		page = browser.new_page()
 		page.set_default_timeout(timeout)
 		page.goto(url)
