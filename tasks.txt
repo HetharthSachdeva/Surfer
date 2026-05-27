@@ -1,3 +1,9 @@
-https://www.linkedin.com
+# headless: False
+# timeout: 45000
+
+goto https://www.chess.com
+click Log In
+fill Email|||hetharthsach@gmail.com
+fill password|||Kanhachess123!
+click Sign in
 screenshot
-screenshot.png
