@@ -1,26 +1,14 @@
 #!/usr/bin/env python3
 """
-Simple Playwright CLI runner
+Simple Playwright Runner from tasks.txt
 
-Usage examples:
-  python agent.py https://example.com get-title
-  python agent.py https://example.com get-text "h1"
-  python agent.py https://example.com screenshot screenshot.png
-  python agent.py https://example.com fill "#name|||Alice"
-
-Tasks supported:
-- get-title: prints the page title
-- get-text: prints inner text of a selector (input = selector)
-- click: clicks a selector (input = selector)
-- fill: fills a selector with value (input = selector|||value)
-- screenshot: saves a screenshot (input = filename)
-- evaluate: runs JS expression and prints result (input = js)
-
-Note: Install browsers with `playwright install` after installing the `playwright` package.
+Configure your task in tasks.txt (line-by-line):
+Line 1: URL to load
+Line 2: Task to perform
+Line 3: Optional input for the task
 """
 
-import argparse
-import json
+import os
 import sys
 from web_agent import WebAgent
 
@@ -71,20 +59,24 @@ def run_task(url: str, task: str, input_str: str | None, headless: bool = False,
 
 
 def main():
-	parser = argparse.ArgumentParser(description="Simple Playwright CLI runner")
-	parser.add_argument("url", help="URL to open")
-	parser.add_argument("task", help="Task to perform (get-title, get-text, click, fill, screenshot, evaluate)")
-	parser.add_argument("input", nargs="?", help="Optional input for the task")
-	parser.add_argument("--headless", dest="headless", action="store_true", help="Run browser in headless mode")
-	parser.add_argument("--headed", dest="headless", action="store_false", help="Run browser with a visible window")
-	parser.add_argument("--timeout", type=int, default=60000, help="Timeout in ms for navigation and actions (default 60000)")
+	if not os.path.exists("tasks.txt"):
+		print("Error: tasks.txt not found. Please create it.")
+		sys.exit(1)
 
-	parser.set_defaults(headless=False)
-	args = parser.parse_args()
+	with open("tasks.txt", "r", encoding="utf-8") as f:
+		lines = [line.strip() for line in f if line.strip()]
 
-	run_task(args.url, args.task, args.input, headless=args.headless, timeout=args.timeout)
+	if len(lines) < 2:
+		print("Error: tasks.txt must contain at least a URL (Line 1) and a task (Line 2).")
+		sys.exit(1)
+
+	url = lines[0]
+	task = lines[1]
+	input_str = lines[2] if len(lines) > 2 else None
+
+	# Run browser with visible window (headless=False)
+	run_task(url, task, input_str, headless=False)
 
 
 if __name__ == "__main__":
 	main()
-
