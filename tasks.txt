@@ -1,9 +1,5 @@
-# headless: False
-# timeout: 45000
-
-goto https://www.chess.com
-click Log In
-fill Email|||hetharthsach@gmail.com
-fill password|||Kanhachess123!
-click Sign in
+goto https://www.saucedemo.com
+fill Username|||standard_user
+fill Password|||secret_sauce
+click Login
 screenshot

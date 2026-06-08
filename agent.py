@@ -1,62 +1,61 @@
 #!/usr/bin/env python3
 """
-Modular Playwright Flow Runner
+Surfer LLM Operator - Playwright Agent
 
-Configure your flow in tasks.txt:
-- Lines starting with '#' can be comments or settings (e.g. '# headless: False')
-- All other lines are steps in the format: <action> [parameter]
+Accepts natural language user goals via terminal input, compiles them into 
+actionable web steps using Gemini, and executes them in a headed browser window.
 """
 
-import os
 import sys
 from web_agent import WebAgent
+from gemini import GeminiPlanner
 
 
-def run_sequence(instructions: list[str], headless: bool = False, timeout: int = 60000):
+def run_sequence(instructions: list[dict], headless: bool = False, timeout: int = 60000):
 	if not instructions:
-		print("No instructions to execute.")
+		print("\n❌ No instructions were generated. Aborting.")
 		return
 
+	print("\n🚀 Executing Plan:")
 	with WebAgent(headless=headless, timeout=timeout) as agent:
-		for idx, line in enumerate(instructions, 1):
-			parts = line.split(maxsplit=1)
-			task = parts[0].strip().lower()
-			input_str = parts[1].strip() if len(parts) > 1 else None
+		for idx, step in enumerate(instructions, 1):
+			task = step.get("action", "").strip().lower()
+			input_str = step.get("argument", "").strip()
 
-			print(f"\n[{idx}/{len(instructions)}] Executing: {task} {input_str or ''}")
+			print(f"\n[{idx}/{len(instructions)}] Action: {task} {input_str or ''}")
 
 			try:
 				if task == "goto":
 					if not input_str:
 						raise ValueError("goto requires a URL as input")
 					agent.navigate(input_str)
-					out = f"navigated to {input_str}"
+					out = f"Navigated to {input_str}"
 
 				elif task == "get-title":
-					out = agent.get_title()
+					out = f"Title: {agent.get_title()}"
 
 				elif task == "screenshot":
 					filename = input_str or "screenshot.png"
 					agent.screenshot(filename)
-					out = f"screenshot saved: {filename}"
+					out = f"Screenshot saved: {filename}"
 
 				elif task == "get-text":
 					if not input_str:
 						raise ValueError("get-text requires a selector as input")
-					out = agent.get_text(input_str)
+					out = f"Text found: {agent.get_text(input_str)}"
 
 				elif task == "click":
 					if not input_str:
 						raise ValueError("click requires a selector as input")
 					agent.click(input_str)
-					out = f"clicked {input_str}"
+					out = f"Clicked {input_str}"
 
 				elif task == "fill":
 					if not input_str or "|||" not in input_str:
 						raise ValueError("fill requires input in the form selector|||value")
 					selector, value = input_str.split("|||", 1)
 					agent.fill(selector, value)
-					out = f"filled {selector}"
+					out = f"Filled {selector}"
 
 				elif task == "evaluate":
 					if not input_str:
@@ -64,48 +63,51 @@ def run_sequence(instructions: list[str], headless: bool = False, timeout: int =
 					out = agent.evaluate(input_str)
 
 				else:
-					out = f"unknown task: {task}"
+					out = f"Unknown task: {task}"
 
 			except Exception as e:
-				out = f"error: {e}"
-				print(f"Result: {out}")
-				print("Aborting flow execution due to error.")
+				out = f"Error: {e}"
+				print(f"↳ {out}")
+				print("\n❌ Flow execution aborted due to error.")
 				break
 
-			print(f"Result: {out}")
+			print(f"↳ {out}")
+	print("\n✨ Done!")
 
 
 def main():
-	if not os.path.exists("tasks.txt"):
-		print("Error: tasks.txt not found. Please create it.")
+	print("=" * 60)
+	print("🤖 Welcome to Surfer - Your AI Web Operator 🤖")
+	print("=" * 60)
+
+	try:
+		goal = input("\nWhat would you like me to do today?\n> ").strip()
+	except KeyboardInterrupt:
+		print("\nGoodbye!")
+		sys.exit(0)
+
+	if not goal:
+		print("Goal cannot be empty. Exiting.")
 		sys.exit(1)
 
-	headless = False
-	timeout = 60000
-	instructions = []
+	print("\n🧠 Consulting Gemini for the execution plan...")
+	try:
+		planner = GeminiPlanner()
+		plan = planner.plan(goal)
+	except Exception as err:
+		print(f"\n❌ Planner Initialization Error: {err}")
+		sys.exit(1)
 
-	with open("tasks.txt", "r", encoding="utf-8") as f:
-		for line in f:
-			line = line.strip()
-			if not line:
-				continue
-			if line.startswith("#"):
-				# Parse optional settings from comments, e.g., "# headless: True"
-				if ":" in line:
-					key, val = line[1:].split(":", 1)
-					key = key.strip().lower()
-					val = val.strip()
-					if key == "headless":
-						headless = val.lower() in ("true", "1", "yes")
-					elif key == "timeout":
-						try:
-							timeout = int(val)
-						except ValueError:
-							pass
-				continue
-			instructions.append(line)
+	if not plan:
+		print("Failed to generate a plan. Please check your prompt or your .env API key.")
+		sys.exit(1)
 
-	run_sequence(instructions, headless=headless, timeout=timeout)
+	print("\n📋 Generated Action Plan:")
+	for idx, step in enumerate(plan, 1):
+		print(f"  {idx}. {step.get('action')}: {step.get('argument')}")
+
+	# Keep headed mode as default so user can watch the browser live
+	run_sequence(plan, headless=False, timeout=45000)
 
 
 if __name__ == "__main__":
