@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Surfer LLM Operator - Playwright Agent
+Surfer LLM Operator - Playwright Agent CLI
 
 Accepts natural language user goals via terminal input, compiles them into 
 actionable web steps using Gemini, and executes them in a headed browser window.

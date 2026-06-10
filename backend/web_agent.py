@@ -189,5 +189,4 @@ class WebAgent:
 			return elements;
 		}
 		"""
-		# Evaluate the JavaScript snippet on the active page context
 		return self.page.evaluate(js_code)

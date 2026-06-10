@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Surfer - AI Web Operator</title>
+	<link rel="stylesheet" href="style.css">
+	<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+	<div class="app-container">
+		<header>
+			<h1>🤖 Surfer</h1>
+			<p class="subtitle">Autonomous AI Web Agent Operator</p>
+		</header>
+
+		<main class="main-layout">
+			<!-- Controls Card -->
+			<section class="panel control-panel">
+				<h2>Define Your Goal</h2>
+				<form id="goal-form">
+					<textarea id="goal-input" placeholder="e.g., Log in to saucedemo.com with standard_user and secret_sauce, then take a screenshot" required></textarea>
+					<button type="submit" id="submit-btn">Run Agent</button>
+				</form>
+
+				<div id="loader" class="loader hidden">
+					<div class="spinner"></div>
+					<p>Consulting Gemini and executing automation... Please watch the browser window.</p>
+				</div>
+			</section>
+
+			<!-- Results Card -->
+			<section class="panel results-panel hidden" id="results-card">
+				<div class="results-header">
+					<h2>Execution Summary</h2>
+					<span class="status-badge" id="status-badge">Success</span>
+				</div>
+
+				<div class="results-content">
+					<!-- Steps List -->
+					<div class="steps-container">
+						<h3>Steps Taken</h3>
+						<ol id="steps-list" class="steps-list"></ol>
+					</div>
+
+					<!-- Screenshot Render -->
+					<div class="screenshot-container">
+						<h3>Final State Screenshot</h3>
+						<div class="img-wrapper">
+							<img id="screenshot-img" src="" alt="Final Browser State">
+						</div>
+					</div>
+				</div>
+			</section>
+		</main>
+	</div>
+
+	<script src="app.js"></script>
+</body>
+</html>
