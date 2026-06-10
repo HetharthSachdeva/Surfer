@@ -43,9 +43,11 @@ You are a web automation planner. Your job is to translate a user's high-level g
 Analyze the user's request and plan a path.
 
 Rules:
-1. Prefer using semantic text matching (e.g. "Login", "Sign In") for click and fill tasks over complex CSS/XPath selectors.
-2. For the fill action, format the argument exactly as: <selector_or_text>|||<value>.
-3. For screenshot, provide a filename as the argument.
+1. Plan the steps logically starting with navigating to a target website.
+2. For the click action, the argument must be the selector or semantic text (e.g. "Login", "Sign In").
+3. For the fill action, format the argument exactly as: <selector_or_text>|||<value>.
+4. For screenshot, provide a filename as the argument.
+5. Keep your plans brief and optimistic.
 """
 
 		try:
@@ -66,4 +68,64 @@ Rules:
 
 		except Exception as e:
 			print(f"Error communicating with Gemini Planner: {e}")
+			return []
+
+	def replan(
+		self, 
+		user_goal: str, 
+		executed_history: list[dict], 
+		failed_step: dict, 
+		error_message: str, 
+		current_dom: list[dict]
+	) -> list[dict]:
+		"""
+		Sends execution history, failure context, and active DOM state to Gemini
+		to generate a dynamic recovery plan.
+		"""
+		system_instruction = """
+You are an expert web automation debugger. An automated web agent encountered an error during task execution.
+Review the user's goal, the steps successfully completed so far, the step that failed, and the error.
+Look at the visible elements currently on the page and generate a brand-new plan of steps to complete the user's goal from the current state.
+
+Rules:
+1. Look closely at the list of visible elements under CURRENT PAGE STATE. 
+2. To interact with an element, you MUST target it by its "index" number in the argument (e.g. click "4" or fill "2|||value").
+3. Do not try to repeat the step that failed unless the page state has changed to make it valid.
+"""
+
+		prompt = f"""
+USER GOAL: {user_goal}
+
+EXECUTED HISTORY (Steps completed successfully):
+{json.dumps(executed_history, indent=2)}
+
+FAILED STEP:
+{json.dumps(failed_step, indent=2)}
+
+ERROR MESSAGE:
+{error_message}
+
+CURRENT PAGE STATE (List of visible interactive elements):
+{json.dumps(current_dom, indent=2)}
+
+Generate a new, revised execution plan to complete the user's goal from this state.
+"""
+
+		try:
+			response = self.client.models.generate_content(
+				model=self.model_name,
+				contents=prompt,
+				config=types.GenerateContentConfig(
+					system_instruction=system_instruction,
+					temperature=0.1,
+					response_mime_type="application/json",
+					response_schema=ExecutionPlan,
+				)
+			)
+
+			plan_data = json.loads(response.text)
+			return plan_data.get("steps", [])
+
+		except Exception as e:
+			print(f"Error communicating with Gemini Replanner: {e}")
 			return []
