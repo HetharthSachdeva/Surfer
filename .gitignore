@@ -8,6 +8,7 @@ __pycache__/
 *.png
 screenshot.png
 tasks.txt
+maang_flagship_blueprint.md
 
 # Environments
 .env
