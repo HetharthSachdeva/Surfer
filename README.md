@@ -1,3 +1,9 @@
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![Celery](https://img.shields.io/badge/celery-%23a9cc51.svg?style=for-the-badge&logo=celery&logoColor=dd)
+![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)
+![Playwright](https://img.shields.io/badge/class-Playwright-45ba4b?style=for-the-badge&logo=playwright)
+
 # Surfer — Autonomous AI Web Operator
 
 Surfer is a full-stack, distributed web automation agent designed to execute complex tasks on the live internet. Powered by large language models (LLMs) and headless browser orchestration, Surfer turns high-level, natural language goals into precise, real-time web actions.
