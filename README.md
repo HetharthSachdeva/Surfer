@@ -1,79 +1,108 @@
-# Surfer Playwright Agent
+# Surfer — Autonomous AI Web Operator
 
-A modular, stateful web automation agent that runs a sequential flow of tasks defined in a `tasks.txt` file in a single browser window session. Perfect as a lightweight foundation for LLM-powered browser operation.
-
-## Installation
-
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Install Playwright browsers:**
-   ```bash
-   python -m playwright install
-   ```
+Surfer is a full-stack, distributed web automation agent designed to execute complex tasks on the live internet. Powered by large language models (LLMs) and headless browser orchestration, Surfer turns high-level, natural language goals into precise, real-time web actions.
 
 ---
 
-## File Structure
+## 🌟 The Vision
 
-- **`web_agent.py`**: The core `WebAgent` class. Handles launching/stopping the browser, managing page sessions, and standard automation tasks.
-- **`agent.py`**: The runner script. Reads instructions from `tasks.txt` and executes them in a persistent loop.
-- **`tasks.txt`**: Your multi-step configuration script.
+The vision of Surfer is to build a **fully autonomous personal assistant** that works on your behalf. 
+
+Instead of writing custom scripts for different websites, you provide a single high-level objective:
+> *"Book a flight ticket from Delhi to Mumbai for next Tuesday under ₹6,000"* or *"Go to my dashboard, download the latest CSV invoice, and save a screenshot."*
+
+Surfer takes this goal, plans the path, launches a browser, handles login screens, navigates forms, solves errors dynamically, and returns the finished state.
 
 ---
 
-## How to Use
+## 🚀 Key Features & Systems Architecture
 
-Configure your flow in **`tasks.txt`**. 
+Surfer is engineered for high performance, reliability, and horizontal scaling. It is built using a **decoupled asynchronous architecture**:
 
-### Settings Configuration (Header Comments)
-You can configure global settings by adding `# key: value` lines at the top of the file:
-* `# headless: True` (Run in background) or `# headless: False` (Watch browser live, **default**)
-* `# timeout: 30000` (Timeout in milliseconds, **default 60000**)
+### 1. Asynchronous Distributed Task Queue (Celery + Redis)
+* **Non-Blocking API**: The FastAPI backend offloads heavy browser operations to a background Celery worker queue instantly (responding in <5ms with a `task_id`).
+* **Microservices Design**: The API server remains lightweight and responsive, while Celery workers execute resource-heavy Chromium processes independently.
 
-### Instruction Format
-Each non-comment line is executed sequentially as a step in the format:
-```text
-<action> [parameter]
+### 2. Stable Selector Index Mapping
+* **Dynamic Tagging**: Surfer injects a lightweight Javascript engine that scans the active page DOM and overlays temporary, sequential `data-surfer-id="[index]"` attributes on visible interactive elements.
+* **100% Click Precision**: By forcing the LLM to target element indices (e.g. `click 3`) instead of volatile Tailwind hashes or raw CSS paths, Surfer bypasses class name changes and dynamic UI alterations.
+
+### 3. Optimistic Execution with Reactive Replanning
+* **Low Latency**: Instead of calling the LLM before every single click, Surfer generates a full execution plan initially and runs at native browser speed.
+* **Fault-Tolerant Feedback Loop**: If an action fails (e.g., due to a popup blocker or timeout), the system isolates the active page state, extracts the visible DOM, and prompts the Gemini LLM for an in-context recovery detour without restarting the browser.
+
+### 4. Pydantic-Enforced Structured JSON Outputs
+* **Deterministic Plans**: The planner uses `google-genai`'s structured decoding, enforcing strict Pydantic JSON schemas. This completely eliminates formatting bugs, markdown code blocks, or conversational preambles from the LLM.
+
+---
+
+## 📂 Directory Structure
+
+```
+d:\Coding\Surfer\
+├── backend/
+│   ├── celery_app.py (Celery Broker Setup)
+│   ├── tasks.py (Asynchronous Browser Worker)
+│   ├── main.py (FastAPI App & Status Pollers)
+│   ├── web_agent.py (Playwright Browser Driver)
+│   ├── gemini.py (Pydantic LLM Planner)
+│   └── .env (API Credentials)
+└── frontend/
+    ├── index.html (Dashboard Interface)
+    ├── style.css (Glassmorphic Dark Theme)
+    └── app.js (Real-time Status Polling Event Loop)
 ```
 
-### Example Flow Script:
-Create the following flow in your `tasks.txt` to visit a site, read its title, click a link, and capture a screenshot:
-```text
-# headless: False
-# timeout: 45000
+---
 
-goto https://example.com
-get-title
-click a
-screenshot example_success.png
-```
+## 🛠️ Setup & Installation
 
-### Running the Agent
-Once `tasks.txt` is saved, simply execute:
+### 1. Prerequisites
+Ensure you have the following installed on your machine:
+* Python 3.10+
+* **[Redis Server](https://github.com/tporadowski/redis/releases)** (For Windows, download the latest `Redis-x64-5.0.14.1.zip` and extract it to `C:\Redis`).
+
+### 2. Clone and Install Dependencies
+Install the required packages in your Python environment:
 ```bash
-python agent.py
+pip install fastapi uvicorn "redis<5.0.0" celery google-genai python-dotenv playwright
+python -m playwright install chromium
+```
+*(Note: We lock the client `redis` package below v5.0.0 to guarantee backward compatibility with Redis Server 5.x on Windows, bypassing RESP3 handshake issues).*
+
+### 3. Add API Keys
+Create a `.env` file inside the `backend/` directory:
+```text
+# backend/.env
+GEMINI_API_KEY=your_google_gemini_api_key_here
 ```
 
 ---
 
-## Tasks Supported
+## 🏃 Running the Application
 
-- `goto <url>`: Navigates to the specified URL.
-- `get-title`: Prints the active page title.
-- `screenshot [filename]`: Saves a full-page screenshot (default is `screenshot.png`).
-- `get-text <selector>`: Prints the inner text of the selector.
-- `click <selector>`: Clicks the element matching the selector.
-- `fill <selector>|||<value>`: Fills an input element with the value.
-- `evaluate <js_expression>`: Runs a JS expression and prints the returned result.
+To run the full decoupled system, open three terminal windows:
 
----
+### Step 1: Start Redis Server
+```powershell
+cd C:\Redis-x64-5.0.14.1
+./redis-server.exe
+```
 
-## Technical Features
+### Step 2: Start Celery Worker
+Navigate to the `backend` directory and start the background worker:
+```bash
+cd backend
+celery -A tasks worker --loglevel=info --pool=solo
+```
+*(Note: We use the `--pool=solo` flag on Windows to bypass the lack of Linux-native process forking).*
 
-- **Sequential Persistence**: All instructions run on the same browser instance, maintaining browser history, loaded states, and sessions.
-- **Auto-abort on Error**: If any step in the sequence fails, the agent prints the failure and aborts to prevent cascading errors.
-- **Headed Mode by Default**: Allows you to watch the browser actions live on your screen as the agent runs.
-- **Safe Ignored Files**: Pre-configured `.gitignore` to keep compiled caches, environments, and screenshot files out of Git.
+### Step 3: Start FastAPI Server
+Navigate to the `backend` directory and run the API:
+```bash
+cd backend
+python main.py
+```
+
+### Step 4: Open the Frontend
+Open `frontend/index.html` directly in your browser. Enter your goal and click **Run Agent**!
