@@ -19,6 +19,34 @@ Surfer takes this goal, plans the path, launches a browser, handles login screen
 
 Surfer is engineered for high performance, reliability, and horizontal scaling. It is built using a **decoupled asynchronous architecture**:
 
+```mermaid
+sequenceDiagram
+    participant Browser as Browser Client (index.html)
+    participant FastAPI as FastAPI API Server (main.py)
+    participant Redis as Redis Message Broker (Broker 0)
+    participant Worker as Celery Worker (tasks.py)
+    participant BrowserCtx as Playwright (Browser Context)
+
+    Browser->>FastAPI: POST /run { goal: "..." }
+    FastAPI->>FastAPI: plan = GeminiPlanner.plan(goal)
+    FastAPI->>Redis: Push task run_agent_task.delay(goal, plan)
+    FastAPI-->>Browser: HTTP 202: Return task_id instantly
+    Note over Browser: Client starts poll loop every 1.5s
+    
+    Worker->>Redis: Poll and fetch task
+    Worker->>BrowserCtx: Launch and execute steps sequence
+    BrowserCtx-->>Worker: Done
+    Worker->>Redis: Write final JSON result + Base64 screenshot
+    
+    loop Status Polling
+        Browser->>FastAPI: GET /status/{task_id}
+        FastAPI->>Redis: Check task result
+        Redis-->>FastAPI: Return State (PENDING / SUCCESS)
+        FastAPI-->>Browser: Return Status
+    end
+    Note over Browser: If SUCCESS, render steps & screenshot
+```
+
 ### 1. Asynchronous Distributed Task Queue (Celery + Redis)
 * **Non-Blocking API**: The FastAPI backend offloads heavy browser operations to a background Celery worker queue instantly (responding in <5ms with a `task_id`).
 * **Microservices Design**: The API server remains lightweight and responsive, while Celery workers execute resource-heavy Chromium processes independently.
