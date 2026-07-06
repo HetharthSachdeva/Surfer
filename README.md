@@ -103,26 +103,6 @@ sequenceDiagram
 * **Visual Grid Separations**: Restructured as an IDE dashboard where user controls and the scrollable live browser viewport occupy the top row, while diagnostics (scrolling terminal console and steps history) occupy the bottom row.
 
 ---
-
-## 📂 Directory Structure
-
-```
-d:\Coding\Surfer\
-├── backend/
-│   ├── celery_app.py (Celery Broker Setup)
-│   ├── tasks.py (Asynchronous Browser Worker)
-│   ├── main.py (FastAPI App & Status Pollers)
-│   ├── web_agent.py (Playwright Browser Driver)
-│   ├── gemini.py (Pydantic LLM Planner)
-│   └── .env (API Credentials)
-└── frontend/
-    ├── index.html (Dashboard Interface)
-    ├── style.css (Glassmorphic Dark Theme)
-    └── app.js (Real-time Status Polling Event Loop)
-```
-
----
-
 ## 🛠️ Setup & Installation
 
 ### 1. Prerequisites
@@ -174,3 +154,23 @@ python main.py
 
 ### Step 4: Open the Frontend
 Open `frontend/index.html` directly in your browser. Enter your goal and click **Run Agent**!
+---
+
+## 📂 Directory Structure
+
+```
+d:\Coding\Surfer\
+├── backend/
+│   ├── celery_app.py (Celery Broker Setup)
+│   ├── tasks.py (Asynchronous Browser Worker)
+│   ├── main.py (FastAPI App & Status Pollers)
+│   ├── web_agent.py (Playwright Browser Driver)
+│   ├── gemini.py (Pydantic LLM Planner)
+│   └── .env (API Credentials)
+└── frontend/
+    ├── index.html (Dashboard Interface)
+    ├── style.css (Glassmorphic Dark Theme)
+    └── app.js (Real-time Status Polling Event Loop)
+```
+
+---
