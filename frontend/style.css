@@ -241,14 +241,121 @@ h3 {
 /* Screenshot container */
 .img-wrapper {
 	width: 100%;
+	height: 480px; /* Fixed screen window height */
 	border: 1px solid var(--border-color);
 	border-radius: 8px;
-	overflow: hidden;
-	background-color: #000;
+	overflow-y: auto; /* Allow vertical scrolling for long pages */
+	overflow-x: hidden;
+	background-color: #020617; /* Slate 950 */
+	box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.9);
+	scrollbar-width: thin;
+	scrollbar-color: var(--accent-color) transparent;
 }
 
 .img-wrapper img {
 	width: 100%;
 	height: auto;
 	display: block;
+}
+
+/* Live Terminal Console */
+.live-console {
+	background-color: #020617; /* Slate 950 */
+	border: 1px solid var(--border-color);
+	border-radius: 8px;
+	padding: 1rem;
+	font-family: 'Fira Code', 'Courier New', Courier, monospace;
+	font-size: 0.85rem;
+	height: 350px;
+	overflow-y: auto;
+	color: #38bdf8; /* Sky 400 */
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+	box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.9);
+	scrollbar-width: thin;
+	scrollbar-color: var(--accent-color) transparent;
+}
+
+.console-line {
+	line-height: 1.4;
+	word-break: break-word;
+}
+
+.console-line.system-line {
+	color: #64748b; /* Slate 500 */
+	font-style: italic;
+}
+
+.console-line.action-line {
+	color: #10b981; /* Emerald 500 */
+}
+
+.console-line.error-line {
+	color: #f43f5e; /* Rose 500 */
+}
+
+.console-container {
+	display: flex;
+	flex-direction: column;
+}
+
+/* Grids and Standby Placeholders for multi-row cockpit layout */
+.workspace-grid, .status-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 2rem;
+}
+
+@media (min-width: 768px) {
+	.workspace-grid, .status-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+.screenshot-placeholder {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	min-height: 460px; /* Aligns with wrapper height minus border margins */
+	background-color: #020617; /* Slate 955 */
+	border-radius: 8px;
+	color: var(--text-secondary);
+	font-style: italic;
+	font-size: 0.95rem;
+	border: 1px dashed var(--border-color);
+	box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.9);
+}
+
+.browser-panel .img-wrapper {
+	min-height: 480px;
+}
+
+/* Make sure textareas and panels occupy a matching proportion */
+.control-panel textarea {
+	height: 310px; /* Balances the height of the 480px browser mockup panel */
+}
+
+/* Red Stop button styling */
+.stop-btn {
+	background-color: var(--danger);
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 0.8rem 1.6rem;
+	font-size: 1rem;
+	font-weight: 600;
+	cursor: pointer;
+	margin-top: 1rem;
+	transition: background-color 0.2s, transform 0.1s;
+	box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+
+.stop-btn:hover {
+	background-color: #dc2626; /* Darker Red */
+}
+
+.stop-btn:active {
+	transform: scale(0.98);
 }

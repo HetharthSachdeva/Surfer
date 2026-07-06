@@ -27,46 +27,80 @@ Surfer is engineered for high performance, reliability, and horizontal scaling. 
 
 ```mermaid
 sequenceDiagram
-    participant Browser as Browser Client (index.html)
+    participant Browser as Browser Client (app.js)
     participant FastAPI as FastAPI API Server (main.py)
-    participant Redis as Redis Message Broker (Broker 0)
+    participant Redis as Redis Server (Broker 0)
     participant Worker as Celery Worker (tasks.py)
-    participant BrowserCtx as Playwright (Browser Context)
+    participant BrowserCtx as Playwright (Headless Browser)
 
-    Browser->>FastAPI: POST /run { goal: "..." }
-    FastAPI->>FastAPI: plan = GeminiPlanner.plan(goal)
-    FastAPI->>Redis: Push task run_agent_task.delay(goal, plan)
-    FastAPI-->>Browser: HTTP 202: Return task_id instantly
-    Note over Browser: Client starts poll loop every 1.5s
+    Browser->>FastAPI: 1. POST /run { goal }
+    FastAPI->>Redis: 2. run_agent_task.delay(goal, plan)
+    FastAPI-->>Browser: 3. Return taskId instantly (HTTP 202)
+    Note over Browser: Client opens results dashboard immediately
     
-    Worker->>Redis: Poll and fetch task
-    Worker->>BrowserCtx: Launch and execute steps sequence
-    BrowserCtx-->>Worker: Done
-    Worker->>Redis: Write final JSON result + Base64 screenshot
+    Browser->>FastAPI: 4. Open WebSocket (ws://.../ws/{taskId})
+    FastAPI->>Redis: 5. Subscribe to Redis Channel "task:{taskId}"
     
-    loop Status Polling
-        Browser->>FastAPI: GET /status/{task_id}
-        FastAPI->>Redis: Check task result
-        Redis-->>FastAPI: Return State (PENDING / SUCCESS)
-        FastAPI-->>Browser: Return Status
+    loop Action Loop (Visual frames & thought logs)
+        Worker->>BrowserCtx: Execute action (click, fill, navigate)
+        Note over Worker: Wait for page load stability
+        Worker->>BrowserCtx: Capture clean screenshot
+        Worker->>Redis: 6. Publish Step Log & Screenshot Frame
+        Redis-->>FastAPI: Msg received
+        FastAPI-->>Browser: Stream base64 screenshot & step history
+        Note over Browser: Dashboard updates frame-by-frame live!
     end
-    Note over Browser: If SUCCESS, render steps & screenshot
+
+    Note over Worker: If step fails
+    Worker->>BrowserCtx: Tag elements & Apply visual red badges (SoM)
+    Worker->>BrowserCtx: Capture marked screenshot
+    Worker->>Gemini: 7. replan(DOM, previous_plan, badged_screenshot_bytes)
+    Worker->>BrowserCtx: Clear visual badges
+    
+    Worker->>Redis: 8. Publish Success / Failure event
+    Redis-->>FastAPI: Final outcome received
+    FastAPI-->>Browser: Stream final state & Close Connection
 ```
 
 ### 1. Asynchronous Distributed Task Queue (Celery + Redis)
 * **Non-Blocking API**: The FastAPI backend offloads heavy browser operations to a background Celery worker queue instantly (responding in <5ms with a `task_id`).
 * **Microservices Design**: The API server remains lightweight and responsive, while Celery workers execute resource-heavy Chromium processes independently.
 
-### 2. Stable Selector Index Mapping
-* **Dynamic Tagging**: Surfer injects a lightweight Javascript engine that scans the active page DOM and overlays temporary, sequential `data-surfer-id="[index]"` attributes on visible interactive elements.
+### 2. Live WebSocket Frame & Log Streaming
+* **Low Latency**: Uses WebSockets instead of HTTP polling, establishing a single persistent connection to push screenshots and logs instantly down to the browser.
+* **Redis Pub/Sub Channel**: Connects Celery worker events to the FastAPI thread, enabling real-time frame buffering at native browser speeds.
+
+### 3. Stable Selector Index Mapping
+* **Dynamic Tagging**: Surfer injects a custom Javascript engine that scans the active page DOM and overlays temporary, sequential `data-surfer-id="[index]"` attributes on visible interactive elements.
 * **100% Click Precision**: By forcing the LLM to target element indices (e.g. `click 3`) instead of volatile Tailwind hashes or raw CSS paths, Surfer bypasses class name changes and dynamic UI alterations.
 
-### 3. Optimistic Execution with Reactive Replanning
-* **Low Latency**: Instead of calling the LLM before every single click, Surfer generates a full execution plan initially and runs at native browser speed.
-* **Fault-Tolerant Feedback Loop**: If an action fails (e.g., due to a popup blocker or timeout), the system isolates the active page state, extracts the visible DOM, and prompts the Gemini LLM for an in-context recovery detour without restarting the browser.
+### 4. Multimodal Visual Grounding (Set-of-Mark Vision)
+* **Visual Overlays**: When a browser step fails, Surfer overlays red numbered badges directly on top of all interactive components.
+* **multimodal replanning**: Passes the badged screenshot bytes directly to the Gemini Vision API alongside the textual DOM, allowing the model to physically "look" at the page layout to find recovery detours.
 
-### 4. Pydantic-Enforced Structured JSON Outputs
+### 5. Optimistic Execution with Active Queue Replanning
+* **Plan Remainder Routing**: When recovering from errors, Surfer passes the currently active queue of pending steps (`previous_plan`) rather than the stale initial plan. The model generates a brand-new plan from the current state all the way to the very end of the user goal.
+
+### 6. Stealth & Anti-Bot Evasions
+* **Automation Masking**: Spooofs standard navigator user-agents, viewport dimensions, timezone settings, and locale arguments to disable chromium automation signatures (hiding `--disable-blink-features=AutomationControlled` flags).
+
+### 7. Automatic Multi-Tab Switching (Page Listener)
+* **Popup Target Routing**: Listens to browser context page spawners. If clicking a product link forces a new tab to open (`target="_blank"`), the agent automatically shifts its active execution context (`self.page`) to the new tab.
+
+### 8. Database-Driven Task Cancellation (Stop Button)
+* **Platform-Independent Termination**: When the user clicks **Stop Agent**, FastAPI registers a `cancelled:{task_id}` flag in Redis. The Celery worker loops check this flag before executing any action, immediately aborting execution without requiring OS process kills.
+
+### 9. Human Action Required Guardrail
+* **Terminal Stop States**: Directs Gemini to generate a terminal `stop` step explaining the roadblock if the objective hits credit card processing, OTP requests, or multi-factor login checks.
+
+### 10. Page Stability Settle Loops
+* **Loading Spinner Evasion**: Automatically waits for `domcontentloaded` and `networkidle` states, along with a brief layout settling buffer, before capturing any screenshot or scraping the DOM. This prevents capturing blank pages or loading spinner assets.
+
+### 11. Pydantic-Enforced Structured JSON Outputs
 * **Deterministic Plans**: The planner uses `google-genai`'s structured decoding, enforcing strict Pydantic JSON schemas. This completely eliminates formatting bugs, markdown code blocks, or conversational preambles from the LLM.
+
+### 12. Sleek Cockpit Dashboard UI Layout
+* **Visual Grid Separations**: Restructured as an IDE dashboard where user controls and the scrollable live browser viewport occupy the top row, while diagnostics (scrolling terminal console and steps history) occupy the bottom row.
 
 ---
 

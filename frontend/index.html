@@ -15,43 +15,56 @@
 		</header>
 
 		<main class="main-layout">
-			<!-- Controls Card -->
-			<section class="panel control-panel">
-				<h2>Define Your Goal</h2>
-				<form id="goal-form">
-					<textarea id="goal-input" placeholder="e.g., Log in to saucedemo.com with standard_user and secret_sauce, then take a screenshot" required></textarea>
-					<button type="submit" id="submit-btn">Run Agent</button>
-				</form>
+			<!-- Row 1: Workspace Grid (Controls & Live Browser View side-by-side) -->
+			<div class="workspace-grid">
+				<!-- Controls Card -->
+				<section class="panel control-panel">
+					<h2>Define Your Goal</h2>
+					<form id="goal-form">
+						<textarea id="goal-input" placeholder="e.g., Log in to saucedemo.com with standard_user and secret_sauce, then take a screenshot" required></textarea>
+						<button type="submit" id="submit-btn">Run Agent</button>
+					</form>
 
-				<div id="loader" class="loader hidden">
-					<div class="spinner"></div>
-					<p>Consulting Gemini and executing automation... Please watch the browser window.</p>
-				</div>
-			</section>
-
-			<!-- Results Card -->
-			<section class="panel results-panel hidden" id="results-card">
-				<div class="results-header">
-					<h2>Execution Summary</h2>
-					<span class="status-badge" id="status-badge">Success</span>
-				</div>
-
-				<div class="results-content">
-					<!-- Steps List -->
-					<div class="steps-container">
-						<h3>Steps Taken</h3>
-						<ol id="steps-list" class="steps-list"></ol>
+					<div id="loader" class="loader hidden">
+						<div class="spinner"></div>
+						<p>Consulting Gemini and executing automation... Please watch the browser window.</p>
+						<button type="button" id="stop-btn" class="stop-btn">Stop Agent</button>
 					</div>
+				</section>
 
-					<!-- Screenshot Render -->
-					<div class="screenshot-container">
-						<h3>Final State Screenshot</h3>
-						<div class="img-wrapper">
-							<img id="screenshot-img" src="" alt="Final Browser State">
+				<!-- Live Browser Viewer Card -->
+				<section class="panel browser-panel" id="browser-card">
+					<h2 id="screenshot-title">Live Browser View</h2>
+					<div class="img-wrapper">
+						<img id="screenshot-img" src="" alt="Live Browser State" style="display: none;">
+						<div id="screenshot-placeholder" class="screenshot-placeholder">
+							<span>Standby: Awaiting objective...</span>
 						</div>
 					</div>
-				</div>
-			</section>
+				</section>
+			</div>
+
+			<!-- Row 2: Status Grid (Execution Summary & Console Output side-by-side, hidden until run) -->
+			<div class="status-grid hidden" id="results-card">
+				<!-- Execution Summary (Steps Taken) -->
+				<section class="panel steps-panel">
+					<div class="results-header">
+						<h2>Execution Summary</h2>
+						<span class="status-badge" id="status-badge">Success</span>
+					</div>
+					<div class="steps-container">
+						<ol id="steps-list" class="steps-list"></ol>
+					</div>
+				</section>
+
+				<!-- Live Console Terminal -->
+				<section class="panel console-panel">
+					<h2>Live Console Output</h2>
+					<div id="live-console" class="live-console">
+						<div class="console-line system-line">[System] Waiting for task pipeline to boot...</div>
+					</div>
+				</section>
+			</div>
 		</main>
 	</div>
 
