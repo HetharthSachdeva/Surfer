@@ -1,9 +1,14 @@
 import os
 import sys
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from celery.result import AsyncResult
+import redis
+import redis.asyncio as aioredis
+
+# Connect to local Redis 0
+redis_client = redis.Redis(host="localhost", port=6379, db=0)
 
 # Add current folder to path to resolve local imports cleanly
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -55,6 +60,17 @@ def run_agent(payload: GoalRequest):
 	}
 
 
+@app.post("/stop/{task_id}")
+def stop_task(task_id: str):
+	"""
+	Sets a cancellation flag in Redis for the given task ID.
+	The Celery worker loops check this flag and abort execution immediately.
+	"""
+	# Set key with a TTL of 300 seconds (5 minutes)
+	redis_client.set(f"cancelled:{task_id}", "true", ex=300)
+	return {"status": "stop_requested"}
+
+
 @app.get("/status/{task_id}")
 def get_task_status(task_id: str):
 	"""
@@ -79,6 +95,38 @@ def get_task_status(task_id: str):
 		}
 	
 	return {"status": task_result.state.lower()}
+
+
+@app.websocket("/ws/{task_id}")
+async def websocket_endpoint(websocket: WebSocket, task_id: str):
+	"""
+	Establishes WebSocket channel to stream execution frames and logs 
+	published by the worker to Redis Pub/Sub in real-time.
+	"""
+	await websocket.accept()
+
+	# Connect to local Redis 0 asynchronously
+	redis_client = aioredis.from_url("redis://localhost:6379/0")
+	pubsub = redis_client.pubsub()
+	
+	# Subscribe to the specific task execution channel
+	channel_name = f"task:{task_id}"
+	await pubsub.subscribe(channel_name)
+
+	try:
+		# Stream inbound Redis events down the open WebSocket connection
+		async for message in pubsub.listen():
+			if message["type"] == "message":
+				data = message["data"].decode("utf-8")
+				await websocket.send_text(data)
+	except WebSocketDisconnect:
+		print(f"Client disconnected from WebSocket stream for task: {task_id}")
+	except Exception as e:
+		print(f"Error in WebSocket task stream {task_id}: {e}")
+	finally:
+		# Clean up connections on socket close
+		await pubsub.unsubscribe(channel_name)
+		await redis_client.close()
 
 
 if __name__ == "__main__":

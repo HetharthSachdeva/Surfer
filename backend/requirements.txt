@@ -1,0 +1,16 @@
+# Core Web Server
+fastapi
+uvicorn
+
+# Background Task Queue
+celery
+# Lock redis client below 5.0.0 to prevent RESP3 protocol negotiation errors (unknown command 'HELLO') with Redis Server 5.x on Windows
+redis<5.0.0
+
+# AI Planning & Structured JSON Models
+google-genai
+pydantic
+python-dotenv
+
+# Browser Automation & DOM Crawling
+playwright
